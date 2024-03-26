@@ -337,6 +337,10 @@ def FFTshift(signal, delay):
     y = fftpack.ifft(Y)
     y = y.real
     return y
+
+def shift_signal(signal, t_shift, dt):
+    return FFTshift(signal,float(t_shift/dt)) 
+
 def coherency(*args):
 # Input arguments:
 #  S1 - Signal 1 numpy array
