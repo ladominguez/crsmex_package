@@ -165,6 +165,7 @@ def get_correlation_coefficient(*args):
         S1 = S1[index_1][:Ntrim]
         T2 = T2[index_2][:Ntrim]
         S2 = S2[index_2][:Ntrim]
+        Win_out = (Ntrim - 1)*sac1.stats.delta
 
     if len(S1) < Ntrim or len(S2) < Ntrim or len(S1) != len(S2):
         CorrelationCoefficient = 0
@@ -204,7 +205,7 @@ def get_correlation_coefficient(*args):
         plt.savefig( 'sequence_' + stnm + '_' + kevnm_1 + '_' + kevnm_2 + '.png' )
         plt.close()
 
-    return (CorrelationCoefficient, tshift, S1, S2)
+    return (CorrelationCoefficient, tshift, S1, S2, Win_out)
     
 def eq_window(sac_file, SNR = 3):
 # [tw Ad] = eq_window(sac,SNR)def 
@@ -339,7 +340,7 @@ def FFTshift(signal, delay):
     return y
 
 def shift_signal(signal, t_shift, dt):
-    return FFTshift(signal,float(t_shift/dt)) 
+    return FFTshift(signal,float(-t_shift/dt)) 
 
 def coherency(*args):
 # Input arguments:
