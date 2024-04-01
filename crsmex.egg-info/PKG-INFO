@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
-Name: crsmex_package
-Version: 0.1.0
+Name: crsmex
+Version: 0.0.14
 Summary: CRSMEX Python package
 Author: Luis A. Dominguez
 Author-email: <ladominguez12@gmail.com>
