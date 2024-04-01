@@ -1,6 +1,0 @@
-README.md
-setup.py
-crsmex.egg-info/PKG-INFO
-crsmex.egg-info/SOURCES.txt
-crsmex.egg-info/dependency_links.txt
-crsmex.egg-info/top_level.txt

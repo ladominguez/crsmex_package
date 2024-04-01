@@ -8,14 +8,14 @@ if os.path.isfile(requirement_path):
     with open(requirement_path) as f:
         install_requires = f.read().splitlines()
 
-VERSION = '0.0.1' 
+VERSION = '0.0.9' 
 DESCRIPTION = 'CRSMEX Python package'
 LONG_DESCRIPTION = 'Characteristic repeating earthquake package.'
 
 # Setting up
 setup(
        # the name must match the folder name 'verysimplemodule'
-        name="crsmex", 
+        name="crsmex_package", 
         version=VERSION,
         author="Luis A. Dominguez",
         author_email="<ladominguez12@gmail.com>",
