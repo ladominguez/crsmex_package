@@ -8,7 +8,7 @@ if os.path.isfile(requirement_path):
     with open(requirement_path) as f:
         install_requires = f.read().splitlines()
 
-VERSION = '0.1.0' 
+VERSION = '0.1.1' 
 DESCRIPTION = 'CRSMEX Python package'
 LONG_DESCRIPTION = 'Characteristic repeating earthquake package.'
 
