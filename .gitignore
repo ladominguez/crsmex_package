@@ -1,2 +1,8 @@
-crsmex_package.egg-info
-__pycache__
+__pycache__/
+*.pyc
+build/
+dist/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ipynb_checkpoints/
