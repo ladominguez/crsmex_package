@@ -205,7 +205,6 @@ def get_correlation_coefficient(*args):
         plt.figure(figsize=(16.0,4.5))
 	#print sac2[0]
         print('Plotting ' + 'sequence_' + stnm + '_' + kevnm_1 + '_' + kevnm_2 + '.png ... ')
-        print('tshift = ' + str(tshift) + 's. dt =' + str(dt) + ' s. float(tshift/dt) = ' + str(float(tshift/dt)))
         S2shift = FFTshift(S2,float(tshift/dt))
         #S2shift = FFTshift(S2, 0.0 )
         plt.plot(T1,S1/np.max(np.abs(S1)),                label='EVID = ' + kevnm_1 + ' ' + str(sac1.stats.starttime.date))
@@ -407,11 +406,9 @@ def coherency(*args):
 
 if __name__ == '__main__':
     CorrelationCoefficient, tshift, S1, S2, Win_out =get_correlation_coefficient()
-    print('CC: ', CorrelationCoefficient)
-    print('tshift: ', tshift)
-    print('S1: ', S1)
-    print('S2: ', S2)
-    print('Win_out: ', Win_out)
+    print(f'CC: {CorrelationCoefficient:.2f}')
+    print(f'tshift: {tshift:.2f}')
+    print(f'Win_out: {Win_out:.2f}')
 
 
 ######## RESERVE ############################
