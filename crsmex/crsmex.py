@@ -1,3 +1,4 @@
+from matplotlib.colors import Normalize
 from obspy.core                     import read, Trace, AttribDict
 from scipy.interpolate              import interp1d
 from obspy.geodetics.base import gps2dist_azimuth
@@ -15,21 +16,22 @@ def get_correlation_coefficient(*args):
     nargin = len(args)
     if nargin == 0:
         print("Running test unit ...")
-        file1  = './test_data/20011105104504.IG.PLIG.BHZ.sac'
-        file2  = './test_data/20080925043418.IG.PLIG.BHZ.sac'
+        file1  = '../test_data/20011105104504.IG.PLIG.BHZ.sac'
+        file2  = '../test_data/20080925043418.IG.PLIG.BHZ.sac'
+        sac1     = read(file1)[0]
+        sac2     = read(file2)[0]
         print("Opening file " + file1)
         print("Opening file " + file2)
-        sac1[0].filter('highpass',freq=1.0, corners=2, zerophase=True)
-        sac2[0].filter('highpass',freq=1.0, corners=2, zerophase=True)
+        sac1.filter('highpass',freq=1.0, corners=2, zerophase=True)
+        sac2.filter('highpass',freq=1.0, corners=2, zerophase=True)
         low      = 1.0
         high     = 8.
         p_pick   =  'manual'
-        sac1     = read(file1)
-        sac2     = read(file2)
         Win      = 0.
         pplot    = True
         t_master = 0.
         t_test   = 0.
+        Normalized_CC = False
     elif nargin == 2:
         sac1     = args[0]
         sac2     = args[1]
@@ -37,6 +39,7 @@ def get_correlation_coefficient(*args):
         p_pick   = 'manual'
         t_master = 0.
         t_test   = 0.
+        Normalized_CC = False
     elif nargin == 3:
         sac1     = args[0]
         sac2     = args[1]
@@ -45,6 +48,7 @@ def get_correlation_coefficient(*args):
         pplot    = False
         t_master = 0.
         t_test   = 0.
+        Normalized_CC = False
     elif nargin == 4:
         sac1     = args[0]
         sac2     = args[1]
@@ -53,6 +57,7 @@ def get_correlation_coefficient(*args):
         pplot    = False
         t_master = 0.
         t_test   = 0.
+        Normalized_CC = False
     else:
         sac1     = args[0]
         sac2     = args[1]
@@ -61,6 +66,7 @@ def get_correlation_coefficient(*args):
         pplot    = args[4]
         t_master = args[5]
         t_test   = args[6]
+        Normalized_CC = args[7]
 
     dt = sac1.stats.delta
     fs = 1.0/dt
@@ -179,13 +185,20 @@ def get_correlation_coefficient(*args):
         CorrelationCoefficient = 0
         tshift                 = 0
     else:
-    	A                      = np.correlate(S1,S2,'full')/(N*np.sqrt(Power_S1*Power_S2))
-    	time2                  = np.arange(-(N-1)*dt, N*dt, dt)
-    	CorrelationCoefficient = A.max()
-    	index                  = np.argmax(A)
-    	tshift                 = time2[index] 
+        A                      = np.correlate(S1,S2,'full')/(N*np.sqrt(Power_S1*Power_S2))
+        time2                  = np.arange(-(N-1)*dt, N*dt, dt)
+        if Normalized_CC:
+            CorrelationCoefficient = A.max()
+            index                  = np.argmax(A)
+            tshift                 = time2[index] 
+        else:
+            CorrelationCoefficient_max = A.max()
+            CorrelationCoefficient_min = A.min()
+            CorrelationCoefficient = CorrelationCoefficient_max if abs(CorrelationCoefficient_max) > abs(CorrelationCoefficient_min) else CorrelationCoefficient_min
+            index = np.argmax(A) if abs(CorrelationCoefficient_max) > abs(CorrelationCoefficient_min) else np.argmin(A)
+            tshift = time2[index]
 
-    if pplot and (CorrelationCoefficient >= 0.95):
+    if pplot and np.abs(CorrelationCoefficient) >= 0.95:
         stnm    = sac1.stats.station.rstrip()
         kevnm_1 = sac1.stats.sac.kevnm.rstrip()
         kevnm_2 = sac2.stats.sac.kevnm.rstrip()
@@ -196,10 +209,18 @@ def get_correlation_coefficient(*args):
         S2shift = FFTshift(S2,float(tshift/dt))
         #S2shift = FFTshift(S2, 0.0 )
         plt.plot(T1,S1/np.max(np.abs(S1)),                label='EVID = ' + kevnm_1 + ' ' + str(sac1.stats.starttime.date))
-        plt.plot(T1,S2shift/np.max(np.abs(S2shift)),      label='EVID = ' + kevnm_2 + ' ' + str(sac2.stats.starttime.date))
+        if CorrelationCoefficient < 0:
+            plt.plot(T1,-S2shift/np.max(np.abs(S2shift)), label='EVID = ' + kevnm_2 + ' ' + str(sac2.stats.starttime.date))
+        else:
+            plt.plot(T1,S2shift/np.max(np.abs(S2shift)),  label='EVID = ' + kevnm_2 + ' ' + str(sac2.stats.starttime.date))
+
         plt.legend(loc='upper right')
         plt.xlabel('Time [s]', fontsize=16)
-        plt.title('cc = '   + "{0:5.4f}".format(CorrelationCoefficient) + ' dt = '  + "{0:4.2f}".format(tshift) + 's ' + ' $M_1$ = ' + "{0:3.1f}".format(Mag1) + ' $M_2$ = ' + "{0:3.1f}".format(Mag2) + ' $\Delta t$ = ' + "{0:3.1f}".format(dt_event) + unit_time)
+        if CorrelationCoefficient < 0:
+            plt.title('Anti-repeater cc = '   + "{0:5.4f}".format(CorrelationCoefficient) + ' dt = '  + "{0:4.2f}".format(tshift) + 's ' + ' $M_1$ = ' + "{0:3.1f}".format(Mag1) + ' $M_2$ = ' + "{0:3.1f}".format(Mag2) + r' $\Delta t$ = ' + "{0:3.1f}".format(dt_event) + unit_time, color='red')
+        else:
+            plt.title('cc = '   + "{0:5.4f}".format(CorrelationCoefficient) + ' dt = '  + "{0:4.2f}".format(tshift) + 's ' + ' $M_1$ = ' + "{0:3.1f}".format(Mag1) + ' $M_2$ = ' + "{0:3.1f}".format(Mag2) + r' $\Delta t$ = ' + "{0:3.1f}".format(dt_event) + unit_time)
+
         plt.axis('tight')
         plt.grid(True)
         plt.savefig( 'sequence_' + stnm + '_' + kevnm_1 + '_' + kevnm_2 + '.png' )
@@ -382,6 +403,16 @@ def coherency(*args):
     #     print 'Writting coherency ', filename
     #     np.savetxt(filename,np.transpose(out),fmt='%-8.3f %7.5f')
     return Cxy_mean
+
+
+if __name__ == '__main__':
+    CorrelationCoefficient, tshift, S1, S2, Win_out =get_correlation_coefficient()
+    print('CC: ', CorrelationCoefficient)
+    print('tshift: ', tshift)
+    print('S1: ', S1)
+    print('S2: ', S2)
+    print('Win_out: ', Win_out)
+
 
 ######## RESERVE ############################
 #    f1 = np.linspace(0.0, fs/2., len(S1)/2)
