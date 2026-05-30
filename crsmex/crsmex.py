@@ -11,62 +11,18 @@ import numpy             as np
 import matplotlib.pyplot as plt
 import sys, math, cmath
 
-def get_correlation_coefficient(*args):
+def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', pplot=False, 
+                                t_master=0., t_test=0., Normalized_CC=False):
     # UNIT TEST
-    nargin = len(args)
-    if nargin == 0:
-        print("Running test unit ...")
-        file1  = '../test_data/20011105104504.IG.PLIG.BHZ.sac'
-        file2  = '../test_data/20080925043418.IG.PLIG.BHZ.sac'
-        sac1     = read(file1)[0]
-        sac2     = read(file2)[0]
-        print("Opening file " + file1)
-        print("Opening file " + file2)
-        sac1.filter('highpass',freq=1.0, corners=2, zerophase=True)
-        sac2.filter('highpass',freq=1.0, corners=2, zerophase=True)
-        low      = 1.0
-        high     = 8.
-        p_pick   =  'manual'
-        Win      = 0.
-        pplot    = True
-        t_master = 0.
-        t_test   = 0.
-        Normalized_CC = False
-    elif nargin == 2:
-        sac1     = args[0]
-        sac2     = args[1]
-        Win      = 40.                # Width of the window in seconds after the sac.a
-        p_pick   = 'manual'
-        t_master = 0.
-        t_test   = 0.
-        Normalized_CC = False
-    elif nargin == 3:
-        sac1     = args[0]
-        sac2     = args[1]
-        Win      = args[2]
-        p_pick   = 'manual'
-        pplot    = False
-        t_master = 0.
-        t_test   = 0.
-        Normalized_CC = False
-    elif nargin == 4:
-        sac1     = args[0]
-        sac2     = args[1]
-        Win      = args[2]
-        p_pick   = args[3]
-        pplot    = False
-        t_master = 0.
-        t_test   = 0.
-        Normalized_CC = False
-    else:
-        sac1     = args[0]
-        sac2     = args[1]
-        Win      = args[2]
-        p_pick   = args[3]
-        pplot    = args[4]
-        t_master = args[5]
-        t_test   = args[6]
-        Normalized_CC = args[7]
+
+    if sac1 is None or sac2 is None:
+        print('Running unit test - get_correlation_coefficient()')
+        sac1 = read('../test_data/20080925043418.IG.PLIG.BHZ.sac')[0]
+        sac2 = read('../test_data/20011105104504.IG.PLIG.BHZ.sac')[0]
+
+        sac1.filter('highpass', freq=1.0, corners=2, zerophase=True)
+        sac2.filter('highpass', freq=1.0, corners=2, zerophase=True)
+
 
     dt = sac1.stats.delta
     fs = 1.0/dt
@@ -372,8 +328,8 @@ def coherency(*args):
     nargin = len(args)
 
     if nargin == 0:
-        sac1 = read('./test_data/20080925043418.IG.PLIG.BHZ.sac')
-        sac2 = read('./test_data/20011105104504.IG.PLIG.BHZ.sac')
+        sac1 = read('../test_data/20080925043418.IG.PLIG.BHZ.sac')
+        sac2 = read('../test_data/20011105104504.IG.PLIG.BHZ.sac')
         S1   = sac1[0].data
         S2   = sac2[0].data
         fs   = sac2[0].stats.sampling_rate

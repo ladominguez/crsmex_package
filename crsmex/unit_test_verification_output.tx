@@ -1,0 +1,7 @@
+Running test unit ...
+Opening file ../test_data/20011105104504.IG.PLIG.BHZ.sac
+Opening file ../test_data/20080925043418.IG.PLIG.BHZ.sac
+Plotting sequence_PLIG__.png ... 
+CC: -0.98
+tshift: 0.65
+Win_out: 51.15
