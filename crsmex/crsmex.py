@@ -24,6 +24,7 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
         sac2.filter('highpass', freq=1.0, corners=2, zerophase=True)
 
 
+
     dt = sac1.stats.delta
     fs = 1.0/dt
 
@@ -53,8 +54,15 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
     #distEvnt = gps2dist_azimuth(sac1[0].stats.sac.evla, sac1[0].stats.sac.evlo, \
     #                           sac2[0].stats.sac.evla, sac2[0].stats.sac.evlo)
     distEvnt  = 0.
-    Mag1     = sac1.stats.sac.mag
-    Mag2     = sac2.stats.sac.mag
+    try:
+        Mag1     = sac1.stats.sac.mag
+    except AttributeError:
+        Mag1 = np.nan
+    try:
+        Mag2     = sac2.stats.sac.mag
+    except AttributeError:
+        Mag2 = np.nan
+
     if dt_event > 365:
         dt_event  = dt_event/365.0
         unit_time = 'years'
@@ -76,6 +84,14 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
     elif p_pick == 'auto':
         P_arrival_1 = sac1.stats.sac.t5
         P_arrival_2 = sac2.stats.sac.t5
+
+    elif p_pick == 't1':    
+        P_arrival_1 = sac1.stats.sac.t1
+        P_arrival_2 = sac2.stats.sac.t1
+
+    elif p_pick == 't2':
+        P_arrival_1 = sac1.stats.sac.t2
+        P_arrival_2 = sac2.stats.sac.t2
 
     elif p_pick == 'fixed':
         P_arrival_1 = t_master 
