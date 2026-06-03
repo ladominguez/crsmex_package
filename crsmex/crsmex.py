@@ -11,6 +11,8 @@ import numpy             as np
 import matplotlib.pyplot as plt
 import sys, math, cmath
 
+SAC_NULL = -12345
+
 def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', pplot=False, 
                                 t_master=0., t_test=0., Normalized_CC=False):
     # UNIT TEST
@@ -76,55 +78,40 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
     T1 = np.linspace(sac1.stats.sac.b, sac1.stats.sac.e, sac1.stats.npts)
     T2 = np.linspace(sac2.stats.sac.b, sac2.stats.sac.e, sac2.stats.npts)
 
-
-    if p_pick == 'manual':
-        P_arrival_1 = sac1.stats.sac.a
-        P_arrival_2 = sac2.stats.sac.a
-
-    elif p_pick == 'auto':
-        P_arrival_1 = sac1.stats.sac.t5
-        P_arrival_2 = sac2.stats.sac.t5
-
-    elif p_pick == 't1':    
-        P_arrival_1 = sac1.stats.sac.t1
-        P_arrival_2 = sac2.stats.sac.t1
-
-    elif p_pick == 't2':
-        P_arrival_1 = sac1.stats.sac.t2
-        P_arrival_2 = sac2.stats.sac.t2
+    if p_pick in ['manual', 'auto', 't1', 't2', 'fixed', 'combined']:
+        field_map = {
+            'manual': 'a',
+            'auto': 't5',
+            't1': 't1',
+            't2': 't2'
+        }
+        p_pick = field_map[p_pick]
+        
+        P_arrival_1 = getattr(sac1.stats.sac, p_pick)
+        P_arrival_2 = getattr(sac2.stats.sac, p_pick)
 
     elif p_pick == 'fixed':
         P_arrival_1 = t_master 
         P_arrival_2 = t_test
-	
-    elif p_pick == 'combined':
-        try:
-            amarker1 = sac1.stats.sac.a 
-        except AttributeError:
-            amarker1 = -12345
-        try:
-            amarker2 = sac2.stats.sac.a 
-        except AttributeError:
-            amarker2 = -12345
-        if   amarker1 != -12345:
-            P_arrival_1 = amarker1
-        elif sac1.stats.sac.t5 != -12345:
-            P_arrival_1 = sac1.stats.sac.t5 
-        else:
-            print("No p_arrrival information_available. get_cotrrelation_coefficient.m")
-            exit()
-        if  amarker2 != -12345:
-            P_arrival_2 = amarker2
-        elif sac2.stats.sac.t5 != -12345:
-            P_arrival_2 = sac2.stats.sac.t5 
-        else:
-            print("No p_arrrival information_available. get_cotrrelation_coefficient.m")
-            exit()
-    else:
-        print("get_correlation_coefficient.m - Invalid option. Choose either manual, auto or combined")
-        exit()
 
-    if P_arrival_1 == -12345.0 or P_arrival_2 == -12345.0:
+    elif p_pick == 'combined':
+        def get_p_arrival(sac):
+            a = getattr(sac.stats.sac, 'a', SAC_NULL)
+
+            if a != SAC_NULL:
+                return a
+            t5 = getattr(sac.stats.sac, 't5', SAC_NULL)
+            if t5 != SAC_NULL:
+                return t5
+            
+        P_arrival_1 = get_p_arrival(sac1)
+        P_arrival_2 = get_p_arrival(sac2)
+
+    else:
+        raise ValueError(f'Unknown p_pick: {p_pick}')
+
+
+    if P_arrival_1 == SAC_NULL or P_arrival_2 == SAC_NULL:
     	sys.exit('Missing p arrival information. ')
 
     # Trim data
@@ -167,7 +154,6 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
             CorrelationCoefficient_max = A.max()
             CorrelationCoefficient_min = A.min()
             CorrelationCoefficient = CorrelationCoefficient_max if abs(CorrelationCoefficient_max) > abs(CorrelationCoefficient_min) else CorrelationCoefficient_min
-            index = np.argmax(A) if abs(CorrelationCoefficient_max) > abs(CorrelationCoefficient_min) else np.argmin(A)
             tshift = time2[index]
 
     if pplot and np.abs(CorrelationCoefficient) >= 0.95:
