@@ -78,12 +78,13 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
     T1 = np.linspace(sac1.stats.sac.b, sac1.stats.sac.e, sac1.stats.npts)
     T2 = np.linspace(sac2.stats.sac.b, sac2.stats.sac.e, sac2.stats.npts)
 
-    if p_pick in ['manual', 'auto', 't1', 't2', 'fixed', 'combined']:
+    if p_pick in ['manual', 'auto', 't1', 't2', 't6', 'fixed', 'combined']:
         field_map = {
             'manual': 'a',
             'auto': 't5',
             't1': 't1',
-            't2': 't2'
+            't2': 't2',
+            't6': 't6'
         }
         p_pick = field_map[p_pick]
         
@@ -154,7 +155,14 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
             CorrelationCoefficient_max = A.max()
             CorrelationCoefficient_min = A.min()
             CorrelationCoefficient = CorrelationCoefficient_max if abs(CorrelationCoefficient_max) > abs(CorrelationCoefficient_min) else CorrelationCoefficient_min
-            tshift = time2[index]
+            if abs(CorrelationCoefficient_max) > abs(CorrelationCoefficient_min):
+                CorrelationCoefficient = CorrelationCoefficient_max
+                index = np.argmax(A)
+                tshift = time2[index]
+            else:
+                CorrelationCoefficient = CorrelationCoefficient_min
+                index = np.argmin(A)
+                tshift = time2[index]
 
     if pplot and np.abs(CorrelationCoefficient) >= 0.95:
         stnm    = sac1.stats.station.rstrip()
