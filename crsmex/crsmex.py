@@ -78,7 +78,7 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
     T1 = np.linspace(sac1.stats.sac.b, sac1.stats.sac.e, sac1.stats.npts)
     T2 = np.linspace(sac2.stats.sac.b, sac2.stats.sac.e, sac2.stats.npts)
 
-    if p_pick in ['manual', 'auto', 't1', 't2', 't6', 'fixed', 'combined']:
+    if p_pick in ['manual', 'auto', 't1', 't2', 't6']:
         field_map = {
             'manual': 'a',
             'auto': 't5',
@@ -97,11 +97,11 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
 
     elif p_pick == 'combined':
         def get_p_arrival(sac):
-            a = getattr(sac.stats.sac, 'a', SAC_NULL)
+            a = getattr(sac.stats.sac, 't1', SAC_NULL)
 
             if a != SAC_NULL:
                 return a
-            t5 = getattr(sac.stats.sac, 't5', SAC_NULL)
+            t5 = getattr(sac.stats.sac, 't0', SAC_NULL)
             if t5 != SAC_NULL:
                 return t5
             
@@ -136,7 +136,14 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
     if len(S1) < Ntrim or len(S2) < Ntrim or len(S1) != len(S2):
         CorrelationCoefficient = 0
         tshift                 = 0
-        return (CorrelationCoefficient, tshift, S1, S2)
+        Ntrim = min(len(S1), len(S2))
+        T1 = T1[:Ntrim]
+        T2 = T2[:Ntrim]
+        S1 = S1[:Ntrim]
+        S2 = S2[:Ntrim]
+        Win_out = (Ntrim - 1)*sac1.stats.delta
+        if Ntrim == 0:
+            return (CorrelationCoefficient, tshift, S1, S2, Win_out)
 
     N        = len(S1)    
     Power_S1 = max(np.correlate(S1,S1))/N

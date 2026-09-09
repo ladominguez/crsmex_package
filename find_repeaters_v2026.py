@@ -1,4 +1,13 @@
-import os, random, shutil, glob, time, crsmex, sys, smtplib
+import os
+import random
+import shutil
+import glob
+import time
+import crsmex
+import sys
+import smtplib
+from pathlib import Path
+import socket
 from subprocess import call
 from datetime   import date
 from obspy      import read
@@ -14,12 +23,63 @@ else:
 email_results = False	
 share_results = True
 
-root_dir      = "/home/lantonio/Dropbox/BSL/CRSMEX/data02/"
-path_data     = root_dir + station_nm + "/mhz/"
-coh_dir       = root_dir + station_nm + "/coh/"
-log_dir       = root_dir + station_nm + "/log/"
-out_dir       = "/home/lantonio/Dropbox/BSL/CRSMEX/output/20240202/"
-share_dir     = "/home/lantonio/Dropbox/BSL/output_crsmex/20240202/"  
+
+NODE_CONFIG = {
+    "shuanshuan": {
+        "root_dir": Path("/home/lantonio/Dropbox/BSL/CRSMEX/data02"),
+        "out_dir": Path("/home/lantonio/Dropbox/BSL/CRSMEX/output"),
+        "share_dir": Path("/home/lantonio/Dropbox/BSL/output_crsmex"),
+    },
+
+    "tohui": {
+        "root_dir": Path("/home/antonio/CRSCAM/data03"),
+        "out_dir": Path("/home/antonio/CRSCAM/output"),
+        "share_dir": Path("/home/antonio/CRSCAM/share"),
+    },
+}
+
+
+
+def get_directories():
+    hostname = socket.gethostname().split(".")[0]
+
+    if hostname not in NODE_CONFIG:
+        raise RuntimeError(
+            f"Unknown cluster node: {hostname}\n"
+            f"Known nodes: {', '.join(NODE_CONFIG)}"
+        )
+
+    config = NODE_CONFIG[hostname]
+
+    root_dir = config["root_dir"]
+    out_dir = config["out_dir"]
+    share_dir = config["share_dir"]
+
+    # Check that input data exists
+    if not root_dir.is_dir():
+        raise RuntimeError(
+            f"Data directory does not exist on {hostname}: {root_dir}"
+        )
+
+    # Create output directories if necessary
+    out_dir.mkdir(parents=True, exist_ok=True)
+    share_dir.mkdir(parents=True, exist_ok=True)
+
+    return hostname, root_dir, out_dir, share_dir
+
+hostname, root_dir, out_dir, share_dir = get_directories()
+
+path_data     = root_dir / station_nm / "bhz"
+coh_dir       = root_dir / station_nm / "coh"
+log_dir       = root_dir / station_nm / "log"
+
+print(f"Running on: {hostname}")
+print(f"Data:        {root_dir}")
+print(f"Output:      {out_dir}")
+print(f"Share:       {share_dir}")
+
+
+
 
 today         = date.today()
 start_time    = time.time()
@@ -31,21 +91,21 @@ out_file2     = "CRS_" + station_nm + "_" + str(today.year) + '{0:02d}'.format(t
                                                               '{0:02d}'.format(today.day)   + ".BSL" # Taira's format
 log_file      = "CRS_" + station_nm + "_" + str(today.year) + '{0:02d}'.format(today.month) + \
                                                               '{0:02d}'.format(today.day)   + ".LOG" # Log file 
-out_file1     = out_dir + out_file1
-out_file2     = out_dir + out_file2
-log_file      = log_dir + log_file
+out_file1     = out_dir / out_file1
+out_file2     = out_dir / out_file2
+log_file      = log_dir / log_file
 
 # Control Parameters 
 Win        =  25.5            # Win = 0 means dynamic window (see file eq_win.m), otherwise Win > 0 fixed lenght.
 Threshold  =  0.90
 low_f      =  1
-high_f     =  15
+high_f     =  8
 n_poles    =  4
-p_pick     = 'auto'     # Manual a field, auto t5 field, combined  either a or t5 field
-pplot      = False
+p_pick     = 'combined'     # Manual a field, auto t5 field, combined  either a or t5 field
+pplot      = True
 no_limit   = False
 
-eq_distance_threshold = 50
+eq_distance_threshold = 30
 eq_sta_dist_limit     = 300
 
 output_dict = {}
@@ -55,8 +115,8 @@ fid2      = open(out_file2, "w")
 fid_log   = open(log_file,  "w")
 fid_log.close()
 # Load in memory
-print("Loading data in memory from " + path_data)
-master    = read(path_data + '*HZ*.sac')
+print(f"Loading data in memory from {path_data}")
+master    = read(path_data / '*HZ*.sac')
 print("Number of waveforms = "+ str(len(master)))
 master.filter('bandpass', freqmin=low_f , freqmax=high_f, corners=n_poles, zerophase=True )
 
@@ -105,19 +165,19 @@ for k in range(0,N):
 						if (p_master != -12345.) and (p_test != -12345.):
 							CorrelationCoefficient, tshift, S1, S2 = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot, p_master, p_test)
 			else:
-				CorrelationCoefficient, tshift, S1, S2 = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot,10.0, 10.0)
+				CorrelationCoefficient, tshift, S1, S2, Wout = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot,10.0, 10.0)
 		else:
 			continue
 		if CorrelationCoefficient >= Threshold:
 			output_index = output_index + 1
-			fileout_coh = coh_dir + 'COH.' + 'BHZ.' + station_nm + '.' +  kevnm_master + '.' + master[n].stats.sac.kevnm.rstrip() + '.DAT'
+			fileout_coh = coh_dir / f"COH.BHZ.{station_nm}.{kevnm_master}.{master[n].stats.sac.kevnm.rstrip()}.DAT"
 			coherence   = crsmex.coherency(S1, S2, low_f, high_f, master[k].stats.sampling_rate, fileout_coh)
 			#print('Coherence = ', coherence)
-			#outline     = str(k) + " " + file_list[k].split('/')[-1] + " " + file_list[n].split('/')[-1] + " " + \
-            #            	  "{0:6.4f}".format(CorrelationCoefficient) + " " \
-		    #    	  "{0:6.2f}".format(tshift) + " " + "{0:5.2f}".format(master[k].stats.sac.evla) + " " + \
-            #          		  "{0:5.2f}".format(master[k].stats.sac.evlo) + " " + "{0:5.2f}".format(master[n].stats.sac.evla) + " " + \
-            #            	  "{0:5.2f}".format(master[n].stats.sac.evlo  ) + " " + "{0:5.2f}".format(Win) 
+			outline     = str(k) + " " + file_list[k].split('/')[-1] + " " + file_list[n].split('/')[-1] + " " + \
+                        	  "{0:6.4f}".format(CorrelationCoefficient) + " " \
+		        	  "{0:6.2f}".format(tshift) + " " + "{0:5.2f}".format(master[k].stats.sac.evla) + " " + \
+                      		  "{0:5.2f}".format(master[k].stats.sac.evlo) + " " + "{0:5.2f}".format(master[n].stats.sac.evla) + " " + \
+                        	  "{0:5.2f}".format(master[n].stats.sac.evlo  ) + " " + "{0:5.2f}".format(Win) 
 			outline2    = str(master[k].stats.starttime.year) + '.' + "{0:03d}".format(master[k].stats.starttime.julday) + '.' + \
                           	"{0:02d}".format(master[k].stats.starttime.hour) + "{0:02d}".format(master[k].stats.starttime.minute) + \
                          	"{0:02d}".format(master[k].stats.starttime.second) + ' ' + \
@@ -127,17 +187,17 @@ for k in range(0,N):
                          	"{0:04d}".format(int(CorrelationCoefficient*1e4)) + ' ' + "{0:04d}".format(int(coherence*1e4)) + ' ' + \
 			  	master[k].stats.sac.kevnm.rstrip() + ' ' + master[n].stats.sac.kevnm.rstrip() 
 			#print(outline2)
-			#fid.write(outline + '\n')
+			fid.write(outline + '\n')
 			fid2.write(outline2 + '\n')
 			output_dict[output_index] = outline2
-			#outline=''
+			outline=''
 			outline2=''
 
 for key_output in output_dict:
 	fid2.write(output_dict[key_output] + '\n')
 
-print("Writting " + out_file1)
-print("Writting " + out_file2)
+print(f"Writting {out_file1}")
+print(f"Writting {out_file2}")
 print("Elapse time (minutes) = ", (time.time() - start_time)/60., ", (hours) = ", (time.time() - start_time)/3600.)
 fid.write("% End Time = " + time.strftime("%d %B %Y at %H:%M:%S") + "\n")
 fid.close()
