@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import random
 import shutil
@@ -13,6 +14,8 @@ from datetime   import date
 from obspy      import read
 #from obspy.core.util import gps2DistAzimuth
 from obspy.geodetics.base import gps2dist_azimuth
+from scipy.spatial import cKDTree
+
 
 if len(sys.argv) == 1:  # UNIT TEST
 	station_nm = "CAIG.HHZ..4-16Hz_data"
@@ -69,7 +72,7 @@ def get_directories():
 
 hostname, root_dir, out_dir, share_dir = get_directories()
 
-path_data     = root_dir / station_nm / "hhz"
+path_data     = root_dir / station_nm / "bhz"
 coh_dir       = root_dir / station_nm / "coh"
 log_dir       = root_dir / station_nm / "log"
 
@@ -102,8 +105,8 @@ low_f      =  1
 high_f     =  8
 n_poles    =  4
 p_pick     = 'combined'     # Manual a field, auto t5 field, combined  either a or t5 field
-pplot      = True
-no_limit   = False
+pplot      = False
+no_limit   = True
 
 eq_distance_threshold = 30
 eq_sta_dist_limit     = 300
@@ -132,53 +135,73 @@ fid.write("% Start Time = " + time.strftime("%d %B %Y at %H:%M:%S") + "\n")
 print("Searching repeaters for station " + station_nm + " ...")
 print("Examining ", N, ' files.')
 output_index = 0
-for k in range(0,N):   
-	#master.filter('highpass', freq=low_f , corners=n_poles, zerophase=True )
-	kevnm_master = master[k].stats.sac.kevnm.rstrip()
-	log_line = 'k = ' + str(k) + ' out of ' + str(N)
-	#print(log_line)
-	if (k-1)%2000 == 0:
-		print(log_line)
-		fid_log   = open(log_file,  'a')
-		fid_log.write(log_line + '\n')
-		fid_log.close()
-	if no_limit == False:
-		#eq_station = gps2DistAzimuth(master[k].stats.sac.evla, master[k].stats.sac.evlo, master[k].stats.sac.stla, master[k].stats.sac.stlo)
-		if master[k].stats.sac.dist > eq_sta_dist_limit:
-			continue
-	for n in range(k+1, N): 
-		#test         = read( file_list[n] )
-		#test.filter('bandpass', freqmin=low_f , freqmax=high_f, corners=n_poles, zerophase=True )
-		#test.filter('highpass', freq=low_f ,  corners=n_poles, zerophase=True )
-		eq_dist = 9999.  # Declare to a  large value
-		if no_limit == False:
-        		eq_dist = gps2dist_azimuth(master[k].stats.sac.evla, master[k].stats.sac.evlo, \
-                        	            master[n].stats.sac.evla,  master[n].stats.sac.evlo )[0]/1000
-		if (eq_dist <= eq_distance_threshold) or (no_limit):
-			if p_pick == 'fixed':
-				master_times = [master[k].stats.sac.t6, master[k].stats.sac.t7, master[k].stats.sac.t8]
-				test_times   = [master[n].stats.sac.t6, master[n].stats.sac.t7, master[n].stats.sac.t8]
-				for kfixed in range(0,3):
-					for jfixed in range(0,3):
-						p_master = master_times[kfixed]
-						p_test   = master_times[jfixed]
-						if (p_master != -12345.) and (p_test != -12345.):
-							CorrelationCoefficient, tshift, S1, S2 = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot, p_master, p_test)
-			else:
-				CorrelationCoefficient, tshift, S1, S2, Wout = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot,10.0, 10.0)
-		else:
-			continue
-		if CorrelationCoefficient >= Threshold:
-			output_index = output_index + 1
-			fileout_coh = coh_dir / f"COH.BHZ.{station_nm}.{kevnm_master}.{master[n].stats.sac.kevnm.rstrip()}.DAT"
-			coherence   = crsmex.coherency(S1, S2, low_f, high_f, master[k].stats.sampling_rate, fileout_coh)
+
+lat = np.array([tr.stats.sac.evla for tr in master])
+lon = np.array([tr.stats.sac.evlo for tr in master])
+
+# Build a spatial index for earthquake locations.
+# Coordinates are converted approximately to kilometers.
+lat_rad = np.radians(lat)
+lon_rad = np.radians(lon)
+
+lat0 = np.mean(lat_rad)
+
+x = 6371.0 * lon_rad * np.cos(lat0)
+y = 6371.0 * lat_rad
+
+coords = np.column_stack((x, y))
+
+tree = cKDTree(coords)
+
+for k in range(N):
+    kevnm_master = master[k].stats.sac.kevnm.rstrip()
+
+    log_line = f'k = {k} out of {N}'
+
+    if (k - 1) % 2000 == 0:
+        print(log_line)
+        with open(log_file, 'a') as fid_log:
+            fid_log.write(log_line + '\n')
+
+    if not no_limit:
+        neighbors = range(k+1, N) 
+    else:
+        neighbors = tree.query_ball_point(coords[k], eq_distance_threshold)
+
+    neighbors.sort()
+
+    for n in neighbors:
+        if n <= k:
+            continue
+
+        eq_dist = 9999. 
+
+        if not no_limit:
+            eq_dist = gps2dist_azimuth(lat[k], lon[k], lat[n], lon[n])[0] / 1000
+
+        if (eq_dist <= eq_distance_threshold)  or no_limit:
+            if p_pick == 'fixed':
+                for kfixed in range(0,3):
+                    for jfixed in range(0,3):
+                        p_master = master_times[kfixed]
+                        p_test   = master_times[jfixed]
+                        if (p_master != -12345.) and (p_test != -12345.):
+                            CorrelationCoefficient, tshift, S1, S2 = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot, p_master, p_test)
+            else:
+                CorrelationCoefficient, tshift, S1, S2, Wout = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot,10.0, 10.0)
+        else:
+           continue
+        if CorrelationCoefficient >= Threshold:
+            output_index = output_index + 1
+            fileout_coh = coh_dir / f"COH.BHZ.{station_nm}.{kevnm_master}.{master[n].stats.sac.kevnm.rstrip()}.DAT"
+            coherence   = crsmex.coherency(S1, S2, low_f, high_f, master[k].stats.sampling_rate, fileout_coh)
 			#print('Coherence = ', coherence)
-			outline     = str(k) + " " + file_list[k].split('/')[-1] + " " + file_list[n].split('/')[-1] + " " + \
+            outline     = str(k) + " " + file_list[k].split('/')[-1] + " " + file_list[n].split('/')[-1] + " " + \
                         	  "{0:6.4f}".format(CorrelationCoefficient) + " " \
 		        	  "{0:6.2f}".format(tshift) + " " + "{0:5.2f}".format(master[k].stats.sac.evla) + " " + \
                       		  "{0:5.2f}".format(master[k].stats.sac.evlo) + " " + "{0:5.2f}".format(master[n].stats.sac.evla) + " " + \
                         	  "{0:5.2f}".format(master[n].stats.sac.evlo  ) + " " + "{0:5.2f}".format(Win) 
-			outline2    = str(master[k].stats.starttime.year) + '.' + "{0:03d}".format(master[k].stats.starttime.julday) + '.' + \
+            outline2    = str(master[k].stats.starttime.year) + '.' + "{0:03d}".format(master[k].stats.starttime.julday) + '.' + \
                           	"{0:02d}".format(master[k].stats.starttime.hour) + "{0:02d}".format(master[k].stats.starttime.minute) + \
                          	"{0:02d}".format(master[k].stats.starttime.second) + ' ' + \
                           	str(master[n].stats.starttime.year) + '.' + "{0:03d}".format(master[n].stats.starttime.julday) + '.' + \
@@ -187,11 +210,11 @@ for k in range(0,N):
                          	"{0:04d}".format(int(CorrelationCoefficient*1e4)) + ' ' + "{0:04d}".format(int(coherence*1e4)) + ' ' + \
 			  	master[k].stats.sac.kevnm.rstrip() + ' ' + master[n].stats.sac.kevnm.rstrip() 
 			#print(outline2)
-			fid.write(outline + '\n')
-			fid2.write(outline2 + '\n')
-			output_dict[output_index] = outline2
-			outline=''
-			outline2=''
+            fid.write(outline + '\n')
+            fid2.write(outline2 + '\n')
+            output_dict[output_index] = outline2
+            outline=''
+            outline2=''
 
 for key_output in output_dict:
 	fid2.write(output_dict[key_output] + '\n')
