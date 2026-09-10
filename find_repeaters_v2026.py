@@ -69,7 +69,7 @@ def get_directories():
 
 hostname, root_dir, out_dir, share_dir = get_directories()
 
-path_data     = root_dir / station_nm / "bhz"
+path_data     = root_dir / station_nm / "hhz"
 coh_dir       = root_dir / station_nm / "coh"
 log_dir       = root_dir / station_nm / "log"
 
