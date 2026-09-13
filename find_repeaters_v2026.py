@@ -155,7 +155,7 @@ tree = cKDTree(coords)
 
 for k in range(N):
     kevnm_master = master[k].stats.sac.kevnm.rstrip()
-
+    win_size = (master[k].stats.sac.t2  - master[k].stats.sac.t0)*1.8
     log_line = f'k = {k} out of {N}'
 
     if (k - 1) % 2000 == 0:
@@ -188,7 +188,7 @@ for k in range(N):
                         if (p_master != -12345.) and (p_test != -12345.):
                             CorrelationCoefficient, tshift, S1, S2 = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot, p_master, p_test)
             else:
-                CorrelationCoefficient, tshift, S1, S2, Wout = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot,10.0, 10.0)
+                CorrelationCoefficient, tshift, S1, S2, Wout = crsmex.get_correlation_coefficient(master[k], master[n], win_size, p_pick, pplot,10.0, 10.0)
         else:
            continue
         if CorrelationCoefficient >= Threshold:
@@ -200,7 +200,7 @@ for k in range(N):
                         	  "{0:6.4f}".format(CorrelationCoefficient) + " " \
 		        	  "{0:6.2f}".format(tshift) + " " + "{0:5.2f}".format(master[k].stats.sac.evla) + " " + \
                       		  "{0:5.2f}".format(master[k].stats.sac.evlo) + " " + "{0:5.2f}".format(master[n].stats.sac.evla) + " " + \
-                        	  "{0:5.2f}".format(master[n].stats.sac.evlo  ) + " " + "{0:5.2f}".format(Win) 
+                        	  "{0:5.2f}".format(master[n].stats.sac.evlo  ) + " " + "{0:5.2f}".format(win_size) 
             outline2    = str(master[k].stats.starttime.year) + '.' + "{0:03d}".format(master[k].stats.starttime.julday) + '.' + \
                           	"{0:02d}".format(master[k].stats.starttime.hour) + "{0:02d}".format(master[k].stats.starttime.minute) + \
                          	"{0:02d}".format(master[k].stats.starttime.second) + ' ' + \
@@ -216,8 +216,8 @@ for k in range(N):
             outline=''
             outline2=''
 
-for key_output in output_dict:
-	fid2.write(output_dict[key_output] + '\n')
+#for key_output in output_dict:
+#	fid2.write(output_dict[key_output] + '\n')
 
 print(f"Writting {out_file1}")
 print(f"Writting {out_file2}")
