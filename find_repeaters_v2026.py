@@ -153,6 +153,7 @@ coords = np.column_stack((x, y))
 
 tree = cKDTree(coords)
 
+print('P_pick: ', p_pick)
 for k in range(N):
     kevnm_master = master[k].stats.sac.kevnm.rstrip()
     win_size = (master[k].stats.sac.t2  - master[k].stats.sac.t0)*1.8
@@ -186,6 +187,7 @@ for k in range(N):
                         p_master = master_times[kfixed]
                         p_test   = master_times[jfixed]
                         if (p_master != -12345.) and (p_test != -12345.):
+                            
                             CorrelationCoefficient, tshift, S1, S2 = crsmex.get_correlation_coefficient(master[k], master[n], Win, p_pick, pplot, p_master, p_test)
             else:
                 CorrelationCoefficient, tshift, S1, S2, Wout = crsmex.get_correlation_coefficient(master[k], master[n], win_size, p_pick, pplot,10.0, 10.0)

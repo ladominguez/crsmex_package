@@ -126,8 +126,12 @@ def get_correlation_coefficient(sac1=None, sac2=None, Win=0., p_pick='manual', p
     else:           
         #Ntrim = 2**nextpow2(float(Win/sac1.stats.delta))
         Ntrim = int(np.round(Win/sac1.stats.delta)) 
+        #print('P1: ', P_arrival_1, ' P2: ', P_arrival_2 )
         index_1 = T1 >= P_arrival_1
-        index_2 = T2 >= P_arrival_2
+        try:
+            index_2 = T2 >= P_arrival_2
+        except:
+            print('sac2: ', sac2)
         T1 = T1[index_1][:Ntrim]
         S1 = S1[index_1][:Ntrim]
         T2 = T2[index_2][:Ntrim]
