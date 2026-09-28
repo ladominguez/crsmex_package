@@ -35,9 +35,9 @@ NODE_CONFIG = {
     },
 
     "tohui": {
-        "root_dir": Path("/home/antonio/CRSCAM/data03"),
-        "out_dir": Path("/home/antonio/CRSCAM/output"),
-        "share_dir": Path("/home/antonio/CRSCAM/share"),
+        "root_dir": Path("/storage/antonio/CRSCAM/data03"),
+        "out_dir": Path("/storage/antonio/CRSCAM/output"),
+        "share_dir": Path("/storage/antonio/CRSCAM/share"),
     },
 }
 
