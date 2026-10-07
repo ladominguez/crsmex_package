@@ -1,43 +1,36 @@
-timestamp =`date +%Y%m%d`
-log_file  = log_$(timestamp)
-python find_repeaters_v2026.py ARIG &> ARIG/log/$(log_file)_arig.info &
-#python find_repeaters_v2026.py CAIG &> CAIG/log/$(log_file)_caig.info &
-python find_repeaters_v2026.py CCIG &> CCIG/log/$(log_file)_ccig.info &	
-python find_repeaters_v2026.py CMIG &> CMIG/log/$(log_file)_cmig.info &	
-python find_repeaters_v2026.py CRIG &> CRIG/log/$(log_file)_crig.info &	
+root='/storage/antonio/data03'
+timestamp=$(date +%Y%m%d)
+
+
+python find_repeaters_v2026.py ARIG &> "$root/ARIG/log/log_${timestamp}_arig.info" &
+python find_repeaters_v2026.py CAIG &> "$root/CAIG/log/log_${timestamp}_caig.info" &
+python find_repeaters_v2026.py CCIG &> "$root/CCIG/log/log_${timestamp}_ccig.info" &	
+python find_repeaters_v2026.py CMIG &> "$root/CMIG/log/log_${timestamp}_cmig.info" &	
+python find_repeaters_v2026.py CRIG &> "$root/CRIG/log/log_${timestamp}_crig.info" &	
 wait
 
-timestamp =`date +%Y%m%d`
-log_file  = log_$(timestamp)
-python find_repeaters_v2026.py DAIG &> DAIG/log/$(log_file)_daig.info &	
-python find_repeaters_v2026.py HUIG &> HUIG/log/$(log_file)_huig.info &	
-python find_repeaters_v2026.py MEIG &> MEIG/log/$(log_file)_meig.info &	
-python find_repeaters_v2026.py MMIG &> MMIG/log/$(log_file)_mmig.info &	
-wait
-
-
-timestamp =`date +%Y%m%d`
-log_file  = log_$(timestamp)
-python find_repeaters_v2026.py MGIG &> MGIG/log/$(log_file)_mgig.info &	
-python find_repeaters_v2026.py PCIG &> PCIG/log/$(log_file)_pcig.info &	
-python find_repeaters_v2026.py PLIG &> PLIG/log/$(log_file)_plig.info &	
-python find_repeaters_v2026.py PNIG &> PNIG/log/$(log_file)_pnig.info &	
+python find_repeaters_v2026.py DAIG &> "$root/DAIG/log/log_${timestamp}_daig.info" &	
+python find_repeaters_v2026.py HUIG &> "$root/HUIG/log/log_${timestamp}_huig.info" &	
+python find_repeaters_v2026.py MEIG &> "$root/MEIG/log/log_${timestamp}_meig.info" &	
+python find_repeaters_v2026.py MMIG &> "$root/MMIG/log/log_${timestamp}_mmig.info" &	
 wait
 
 
-timestamp =`date +%Y%m%d`
-log_file  = log_$(timestamp)
-python find_repeaters_v2026.py TLIG &> TLIG/log/$(log_file)_tlig.info &	
-python find_repeaters_v2026.py TGIG &> TGIG/log/$(log_file)_tgig.info &	
-python find_repeaters_v2026.py THIG &> THIG/log/$(log_file)_thig.info &	
-python find_repeaters_v2026.py TUIG &> TUIG/log/$(log_file)_tuig.info &	
+python find_repeaters_v2026.py MGIG &> "$root/MGIG/log/log_${timestamp}_mgig.info" &	
+python find_repeaters_v2026.py PCIG &> "$root/PCIG/log/log_${timestamp}_pcig.info" &	
+python find_repeaters_v2026.py PLIG &> "$root/PLIG/log/log_${timestamp}_plig.info" &	
+python find_repeaters_v2026.py PNIG &> "$root/PNIG/log/log_${timestamp}_pnig.info" &	
 wait
 
-timestamp =`date +%Y%m%d`
-log_file  = log_$(timestamp)
-python find_repeaters_v2026.py TXIG &> TXIG/log/$(log_file)_txig.info &	
-python find_repeaters_v2026.py ZIIG &> ZIIG/log/$(log_file)_ziig.info &	
-python find_repeaters_v2026.py OXIG &> OXIG/log/$(log_file)_oxig.info &	
-python find_repeaters_v2026.py YOIG &> YOIG/log/$(log_file)_yoig.info &	
-python find_repeaters_v2026.py PEIG &> PEIG/log/$(log_file)_peig.info &	
+python find_repeaters_v2026.py TLIG &> "$root/TLIG/log/log_${timestamp}_tlig.info" &	
+python find_repeaters_v2026.py TGIG &> "$root/TGIG/log/log_${timestamp}_tgig.info" &	
+python find_repeaters_v2026.py THIG &> "$root/THIG/log/log_${timestamp}_thig.info" &	
+python find_repeaters_v2026.py TUIG &> "$root/TUIG/log/log_${timestamp}_tuig.info" &	
+wait
+
+python find_repeaters_v2026.py TXIG &> "$root/TXIG/log/log_${timestamp}_txig.info" &	
+python find_repeaters_v2026.py ZIIG &> "$root/ZIIG/log/log_${timestamp}_ziig.info" &	
+python find_repeaters_v2026.py OXIG &> "$root/OXIG/log/log_${timestamp}_oxig.info" &	
+python find_repeaters_v2026.py YOIG &> "$root/YOIG/log/log_${timestamp}_yoig.info" &	
+python find_repeaters_v2026.py PEIG &> "$root/PEIG/log/log_${timestamp}_peig.info" &	
 wait
